@@ -8,4 +8,6 @@ MarkupSafe==2.1.2
 python-dateutil==2.8.2
 python-dotenv==1.0.0
 six==1.16.0
+tabulate==0.9.0
+vboxapi==1.0
 Werkzeug==2.2.3
