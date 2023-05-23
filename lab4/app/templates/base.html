@@ -40,7 +40,7 @@
                         {% if current_user.is_authenticated %}
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint == 'update_password' %}active{% endif %}"
-                                href="{{ url_for('update_password', user_id=current_user.id) }}">Изменить пароль</a>
+                                href="{{ url_for('update_password') }}">Изменить пароль</a>
                         </li>
                         {% endif %}
                     </ul>

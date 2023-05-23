@@ -1,6 +1,7 @@
 from flask import Flask, render_template, session, request, redirect, url_for, flash
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from mysql_db import MySQL
+from config import TYPES_ERRORS
 import mysql.connector
 
 app = Flask(__name__)
@@ -60,7 +61,6 @@ def login():
         user_password = request.form["passwordInput"]
         remember_me = request.form.get('remember_me') == 'on'
 
-
         auth_user = authentificate_user(user_login, user_password)
         if auth_user:
             login_user(auth_user, remember=remember_me)
@@ -70,9 +70,7 @@ def login():
             
         flash("Введены неверные логин и/или пароль", "danger") 
 
-
     return render_template('login.html')
-
 
 @app.route('/logout')
 def logout():
@@ -115,22 +113,7 @@ def insert_to_db(params):
 
     return True
 
-def validationEdit(params):
-    types_errors = [
-        "Логин не должен быть пустым",
-        "Пароль не должен быть пустым",
-        "Фамилия не должна быть пустой",
-        "Имя не должно быть пустым",
-        "Логин должен быть не меньше 5 символов",
-        "Логин должен состоять только из латинских букв и цифр",
-        "Пароль должен быть не меньше 8 символов",
-        "Пароль должен быть не более 128 символов",
-        "Пароль не должен содержать пробелов",
-        '''Пароль должен состоять из латинских или кириллических букв, содержать только арабские цифры и допустимые символы: ~!?@#$%^&*_-+()[]{}></\|"'.,:;''',
-        "Пароль должен содержать как минимум одну заглавную букву",
-        "Пароль должен содержать как минимум одну строчную букву",
-        "Пароль должен содержать как минимум одну цифру",
-    ]
+def validation_edit(params):
     PERMITTED_LOGIN = "abcdefghijklmnopqrstuvwxyz1234567890"
     errors_res = {
         "login": None,
@@ -141,31 +124,31 @@ def validationEdit(params):
     #Check login
     login = params.get("login")
     if login is None:
-        errors_res["login"] = types_errors[0]
+        errors_res["login"] = TYPES_ERRORS["empty_login"]
         errors_res["isvalidate"] = 0
     elif len(login) < 5:
-        errors_res["login"] = types_errors[4]
+        errors_res["login"] = TYPES_ERRORS["login_incorrect_size"]
         errors_res["isvalidate"] = 0
     else:
         for char in login:
              if PERMITTED_LOGIN.find(char.lower()) == -1:
-                 errors_res["login"] = types_errors[5]
+                 errors_res["login"] = TYPES_ERRORS["login_incorrect_chars"]
                  errors_res["isvalidate"] = 0
                  break
              
     #Check last_name
     if params.get("last_name") is None:
-        errors_res["last_name"] = types_errors[2]
+        errors_res["last_name"] = TYPES_ERRORS["empty_last_name"]
         errors_res["isvalidate"] = 0
 
     #Check first_name
     if params.get("first_name") is None:
-        errors_res["first_name"] = types_errors[3]
+        errors_res["first_name"] = TYPES_ERRORS["empty_first_name"]
         errors_res["isvalidate"] = 0
 
     return errors_res
 
-def checkPassword(params, types_errors, PERMITTED_PASSWORD):
+def check_password(params, PERMITTED_PASSWORD):
     errors_res = {
         "password": None,
     }
@@ -174,17 +157,17 @@ def checkPassword(params, types_errors, PERMITTED_PASSWORD):
     count_digits = 0
     password = params.get("password")
     if password is None:
-        errors_res["password"] = types_errors[1]
+        errors_res["password"] = TYPES_ERRORS["empty_passwd"]
     elif len(password) < 8:
-        errors_res["password"] = types_errors[6]
+        errors_res["password"] = TYPES_ERRORS["password_small_length"]
     elif len(password) > 128:
-        errors_res["password"] = types_errors[7]
+        errors_res["password"] = TYPES_ERRORS["password_big_length"]
     elif password.find(" ") > -1:
-        errors_res["password"] = types_errors[8]
+        errors_res["password"] = TYPES_ERRORS["password_has_spaces"]
     else:
         for char in password:
             if PERMITTED_PASSWORD.find(char.lower()) == -1:
-                errors_res["password"] = types_errors[9]
+                errors_res["password"] = TYPES_ERRORS["password_incorrect_chars"]
                 break
             elif char.isalpha():
                 if char.isupper():
@@ -194,29 +177,14 @@ def checkPassword(params, types_errors, PERMITTED_PASSWORD):
             elif char.isdigit():
                 count_digits += 1
         if count_upper_letters < 1:
-            errors_res["password"] = types_errors[10]
+            errors_res["password"] = TYPES_ERRORS["password_hasnt_big_alpha"]
         elif count_lower_letters < 1:
-            errors_res["password"] = types_errors[11]
+            errors_res["password"] = TYPES_ERRORS["password_hasnt_small_alpha"]
         elif count_digits < 1:
-            errors_res["password"] = types_errors[12]
+            errors_res["password"] = TYPES_ERRORS["password_hasnt_digit"]
     return errors_res
 
-def validationCreate(params):
-    types_errors = [
-        "Логин не должен быть пустым",
-        "Пароль не должен быть пустым",
-        "Фамилия не должна быть пустой",
-        "Имя не должно быть пустым",
-        "Логин должен быть не меньше 5 символов",
-        "Логин должен состоять только из латинских букв и цифр",
-        "Пароль должен быть не меньше 8 символов",
-        "Пароль должен быть не более 128 символов",
-        "Пароль не должен содержать пробелов",
-        '''Пароль должен состоять из латинских или кириллических букв, содержать только арабские цифры и допустимые символы: ~!?@#$%^&*_-+()[]{}></\|"'.,:;''',
-        "Пароль должен содержать как минимум одну заглавную букву",
-        "Пароль должен содержать как минимум одну строчную букву",
-        "Пароль должен содержать как минимум одну цифру",
-    ]
+def validation_create(params):
     PERMITTED_LOGIN = "abcdefghijklmnopqrstuvwxyz1234567890"
     PERMITTED_PASSWORD = '''abcdefghijklmnopqrstuvwxyzабвгдеёжзийклмнопрстуфхцчшщъыьэюя1234567890~!?@#$%^&*_-+()[]{}></\|"'.,:;'''
     errors_res = {
@@ -229,38 +197,36 @@ def validationCreate(params):
     #Check login
     login = params.get("login")
     if login is None:
-        errors_res["login"] = types_errors[0]
+        errors_res["login"] = TYPES_ERRORS["empty_login"]
         errors_res["isvalidate"] = 0
     elif len(login) < 5:
-        errors_res["login"] = types_errors[4]
+        errors_res["login"] = TYPES_ERRORS["login_incorrect_size"]
         errors_res["isvalidate"] = 0
     else:
         for char in login:
              if PERMITTED_LOGIN.find(char.lower()) == -1:
-                 errors_res["login"] = types_errors[5]
+                 errors_res["login"] = TYPES_ERRORS["login_incorrect_chars"]
                  errors_res["isvalidate"] = 0
                  break
              
     #Check last_name
     if params.get("last_name") is None:
-        errors_res["last_name"] = types_errors[2]
+        errors_res["last_name"] = TYPES_ERRORS["empty_last_name"]
         errors_res["isvalidate"] = 0
 
     #Check first_name
     if params.get("first_name") is None:
-        errors_res["first_name"] = types_errors[3]
+        errors_res["first_name"] = TYPES_ERRORS["empty_first_name"]
         errors_res["isvalidate"] = 0
 
     #Check password
-    checked_password = checkPassword(params, types_errors, PERMITTED_PASSWORD)
+    checked_password = check_password(params, PERMITTED_PASSWORD)
     if not checked_password.get("password") is None:
         errors_res["password"] = checked_password["password"]
         errors_res["isvalidate"] = 0
 
     return errors_res
             
-
-
 def params(names_list):
     result = {}
     for name in names_list:
@@ -271,7 +237,7 @@ def params(names_list):
 @login_required
 def create_user():
     cur_params = params(PERMITTED_PARAMS)
-    errors = validationCreate(cur_params)
+    errors = validation_create(cur_params)
     if errors["isvalidate"] == 0:
         flash("Проверьте правильность введённых данных", "danger")
         return render_template("users/new.html", roles = load_roles(), user=cur_params, errors=errors)
@@ -302,7 +268,7 @@ def edit_user(user_id):
 @login_required
 def update_user(user_id):
     cur_params = params(PERMITTED_PARAMS)
-    errors = validationEdit(cur_params)
+    errors = validation_edit(cur_params)
     cur_params["id"] = user_id
     update_query = """
     UPDATE users SET login = %(login)s, last_name = %(last_name)s, 
@@ -351,26 +317,10 @@ def delete_user(user_id):
         db.connection.rollback()
     return redirect(url_for("users"))
 
-@app.route("/<int:user_id>/update_password", methods=['GET', 'POST'])
+@app.route("/update_password", methods=['GET', 'POST'])
 @login_required
-def update_password(user_id):
-    types_errors = [
-        "Логин не должен быть пустым",
-        "Пароль не должен быть пустым",
-        "Фамилия не должна быть пустой",
-        "Имя не должно быть пустым",
-        "Логин должен быть не меньше 5 символов",
-        "Логин должен состоять только из латинских букв и цифр",
-        "Пароль должен быть не меньше 8 символов",
-        "Пароль должен быть не более 128 символов",
-        "Пароль не должен содержать пробелов",
-        '''Пароль должен состоять из латинских или кириллических букв, содержать только арабские цифры и допустимые символы: ~!?@#$%^&*_-+()[]{}></\|"'.,:;''',
-        "Пароль должен содержать как минимум одну заглавную букву",
-        "Пароль должен содержать как минимум одну строчную букву",
-        "Пароль должен содержать как минимум одну цифру",
-        "Неверный пароль",
-        "Пароль должен быть таким же"
-    ]
+def update_password():
+    user_id = current_user.id
     PERMITTED_PASSWORD = '''abcdefghijklmnopqrstuvwxyzабвгдеёжзийклмнопрстуфхцчшщъыьэюя1234567890~!?@#$%^&*_-+()[]{}></\|"'.,:;'''
     errors = {
         "old": None,
@@ -397,15 +347,15 @@ def update_password(user_id):
             print(cursor.statement)
             db_user = cursor.fetchone()
             if db_user is None:
-                errors["old"] = types_errors[13]
+                errors["old"] = TYPES_ERRORS["incorrect_password"]
                 errors["isvalidate"] = 0
-            validate_password = checkPassword({"password": new_passwd}, types_errors, PERMITTED_PASSWORD)
+            validate_password = check_password({"password": new_passwd}, PERMITTED_PASSWORD)
             if not validate_password.get("password") is None:
                 errors["password"] = validate_password["password"]
                 errors["check"] = validate_password["password"]
                 errors["isvalidate"] = 0
             if new_passwd != check_new_passwd:
-                errors["check"] = types_errors[14]
+                errors["check"] = TYPES_ERRORS["incorrect_checked_password"]
                 errors["isvalidate"] = 0
         if errors.get("isvalidate") == 0:
             flash("Проверьте введённые данные", "danger")
