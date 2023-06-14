@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="h-100 text-center d-flex p-3 bg-light">
+    <div class="m-auto">
+        <h1 class="title mb-5 font-weight-bold">Электронная библиотека</h1>
+
+        <div class="container">
+            <p class="description w-15 mb-5 px-3 mx-auto">
+                На нашем сайте вы сможете найти книги на любой вкус.
+            </p>
+
+            <div class="d-flex justify-content-center">
+                {% for book in books %}
+                <div class="card m-3 w-15">
+                    <div class="card-title">{{book.book.name}}</div>
+                    <ul>
+                        {% for genre in book.genres %}
+                        <li>{{genre.name}}</li>
+                        {% endfor %}
+                    </ul>
+                    <div>{{book.book.year}}</div>
+                    <div>{{book.book.rating}}</div>
+                    <div>{{book.book.rating_num}}</div>
+                    <a href="#" class="btn btn-success">Просмотр</a>
+                    {% if current_user.is_authenticated %}
+                    {% if current_user.is_admin() or current_user.is_moder() %}
+                    <button class="btn btn-warning">Редактировать</button>
+                    {% endif %}
+                    {% if current_user.is_admin() %}
+                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"
+                        data-url="{{ url_for('delete_post', book_id = book.book.id) }}"
+                        data-title="{{ book.book.name }}">Удалить</button>
+                    {% endif %}
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% if current_user.is_authenticated %}
+            {% if current_user.is_admin() %}
+            <div><button class="btn btn-primary">Добавить книгу</button></div>
+            {% endif %}
+            {% endif %}
+
+            <!-- <div class="my-5 p-3 bg-dark rounded">
+                <form action="{{ url_for('index') }}" class="row align-items-center">
+                    <div class="col-sm-12 mb-3 col-md-6 mb-md-0">
+                        <input autocomplete="off" type="text" class="form-control" id="course-name" name="name"
+                            placeholder="Название курса">
+                    </div>
+
+                    <div class="col-sm-12 mb-3 col-md-4 mb-md-0">
+                        <select class="form-select" id="course-category" name="category_ids" title="Категория курса">
+                            <option value="">Выберите категорию</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-sm-12 col-md-2 align-self-end">
+                        <button type="submit" class="btn btn-outline-light w-100 mt-auto">Найти</button>
+                    </div>
+                </form>
+            </div> -->
+        </div>
+    </div>
+    {% if current_user.is_authenticated %}
+    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Удаление книги</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    Вы уверены, что хотите удалить книгу
+                    "<span class="delete-title"></span>"
+                    ?
+                    <form action="" class="d-none" method="POST">
+                        <input type="submit" id="submit-delete">
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <label for="submit-delete" class="btn btn-danger mb-0">Удалить</label>
+                </div>
+            </div>
+        </div>
+    </div>
+    {%endif%}
+</div>
+<script src="{{ url_for('static', filename='delete.js')}}"></script>
+{% endblock %}
