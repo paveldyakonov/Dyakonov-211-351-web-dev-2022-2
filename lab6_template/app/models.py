@@ -69,8 +69,8 @@ class Comment(db.Model):
     book_id = db.Column(db.Integer, db.ForeignKey('books.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
 
-    # user = db.relationship('User')
-    # book = db.relationship('Book')
+    user = db.relationship('User', cascade="all,delete")
+    book = db.relationship('Book', cascade="all,delete")
 
     def __repr__(self):
         return '<Comment %r>' % self.text
@@ -107,12 +107,12 @@ class User(db.Model, UserMixin):
         return check_password_hash(self.password_hash, password)
     
     def is_admin(self):
-        return True
-        #return self.role_id == current_app.config["ADMIN_ROLE_ID"]
+        #return True
+        return self.role_id == current_app.config["ADMIN_ROLE_ID"]
     
     def is_moder(self):
-        return True
-        #return self.role_id == current_app.config["MODER_ROLE_ID"]
+        #return True
+        return self.role_id == current_app.config["MODER_ROLE_ID"]
     
     def can(self, action, record=None):
         users_policy = UsersPolicy(record)

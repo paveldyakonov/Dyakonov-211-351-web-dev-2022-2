@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% from "pagination.html" import pagination %}
 
 {% block content %}
 <div class="h-100 text-center d-flex p-3 bg-light">
@@ -10,7 +11,7 @@
                 На нашем сайте вы сможете найти книги на любой вкус.
             </p>
 
-            <div class="d-flex justify-content-center">
+            <div class="d-flex flex-wrap justify-content-center">
                 {% for book in books %}
                 <div class="card m-3 w-15">
                     <div class="card-title">{{book.book.name}}</div>
@@ -22,10 +23,11 @@
                     <div>{{book.book.year}}</div>
                     <div>{{book.book.rating}}</div>
                     <div>{{book.book.rating_num}}</div>
-                    <a href="#" class="btn btn-success">Просмотр</a>
+                    <a href="{{ url_for('show', book_id = book.book.id) }}" class="btn btn-success">Просмотр</a>
                     {% if current_user.is_authenticated %}
                     {% if current_user.is_admin() or current_user.is_moder() %}
-                    <button class="btn btn-warning">Редактировать</button>
+                    <a class="btn btn-warning"
+                        href="{{ url_for('edit_book', book_id = book.book.id) }}">Редактировать</a>
                     {% endif %}
                     {% if current_user.is_admin() %}
                     <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"
@@ -38,7 +40,7 @@
             </div>
             {% if current_user.is_authenticated %}
             {% if current_user.is_admin() %}
-            <div><button class="btn btn-primary">Добавить книгу</button></div>
+            <div><a class="btn btn-primary" href="{{ url_for('new_book') }}">Добавить книгу</a></div>
             {% endif %}
             {% endif %}
 
@@ -64,6 +66,7 @@
                 </form>
             </div> -->
         </div>
+        {{pagination(page, page_count, request.endpoint)}}
     </div>
     {% if current_user.is_authenticated %}
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">

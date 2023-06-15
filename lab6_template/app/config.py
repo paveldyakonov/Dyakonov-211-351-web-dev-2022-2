@@ -9,3 +9,4 @@ SQLALCHEMY_ECHO = True
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'media', 'images')
 ADMIN_ROLE_ID = 1
 MODER_ROLE_ID = 2
+PER_PAGE = 5

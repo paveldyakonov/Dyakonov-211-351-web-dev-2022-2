@@ -1,0 +1,65 @@
+{% macro book_form(genres, url, current_user, new_genres, book = {}) %}
+<form enctype="multipart/form-data" action="{{url}}" method="post">
+  <div class="row mb-3">
+    <label for="inputName" class="col-sm-2 col-form-label">Название</label>
+    <div class="col-sm-10">
+      <input type="text" class="form-control" id="inputName" name="name" value="{{ book.name or '' }}">
+    </div>
+  </div>
+  {% if request.endpoint == "new_book" or request.endpoint == "create_book" %}
+  <div class="col-md-6 d-flex flex-column">
+    <div class="mb-3">
+      <label for="cover_img">Обложка</label>
+      <input class="form-control" type="file" name="cover_img" id="cover_img">
+    </div>
+  </div>
+  {% endif %}
+  <div class="row mb-3">
+    <label for="inputDesc" class="col-sm-2 col-form-label">Описание</label>
+    <div class="col-sm-10">
+      <textarea type="text" class="form-control" id="inputDesc" name="short_desc"
+        value="{{ book.short_desc or '' }}">{{ book.short_desc or '' }}</textarea>
+    </div>
+  </div>
+  <div class="row mb-3">
+    <label for="inputYear" class="col-sm-2 col-form-label">Год написания</label>
+    <div class="col-sm-10">
+      <input type="text" class="form-control" id="inputYear" name="year" value="{{ book.year or '' }}">
+    </div>
+  </div>
+  <div class="row mb-3">
+    <label for="inputHouse" class="col-sm-2 col-form-label">Издательство</label>
+    <div class="col-sm-10">
+      <input type="text" class="form-control" id="inputHouse" name="pub_house" value="{{ book.pub_house or '' }}">
+    </div>
+  </div>
+  <div class="row mb-3">
+    <label for="inputAuthor" class="col-sm-2 col-form-label">Автор</label>
+    <div class="col-sm-10">
+      <input type="text" class="form-control" id="inputAuthor" name="author" value="{{ book.author or '' }}">
+    </div>
+  </div>
+  <div class="row mb-3">
+    <label for="inputVolume" class="col-sm-2 col-form-label">Количество страниц</label>
+    <div class="col-sm-10">
+      <input type="text" class="form-control" id="inputVolume" name="volume" value="{{ book.volume or '' }}">
+    </div>
+  </div>
+  <div class="row mb-3">
+    <label for="inputGenres" class="col-sm-2 col-form-label">Жанр(ы)</label>
+    <div class="col-sm-10">
+      <select multiple class="form-select" aria-label="Default select example" name="genre_id">
+        <option value="0">Не выбрано</option>
+        {% for genre in genres %}
+        <option {% if genre.id | string in new_genres %} selected {% endif %} value="{{ genre.id }}">{{
+          genre.name
+          }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  </div>
+  <button type="submit" class="btn btn-primary">Сохранить
+  </button>
+</form>
+<script src="{{ url_for('static', filename='easyMDE.js')}}"></script>
+{% endmacro %}
