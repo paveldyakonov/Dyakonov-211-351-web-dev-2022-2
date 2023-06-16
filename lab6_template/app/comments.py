@@ -4,6 +4,7 @@ from flask_login import LoginManager, login_user, logout_user, login_required, c
 from models import User, Comment, Book
 from app import db
 from flask import Blueprint
+import bleach
 
 bp = Blueprint('comments', __name__, url_prefix='/comments')
 
@@ -24,6 +25,8 @@ def comment_post(book_id):
             "user_id": current_user.id,
             "book_id": book_id
         }
+        for param in params:
+            param = bleach.clean(param)
         try:
             comment = Comment(**params)
             db.session.add(comment)

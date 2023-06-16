@@ -4,39 +4,94 @@
 {% block content %}
 <div class="h-100 text-center d-flex p-3 bg-light">
     <div class="m-auto">
-        <h1 class="title mb-5 font-weight-bold">Электронная библиотека</h1>
+        <h1 class="title mb-2 font-weight-bold">Электронная библиотека</h1>
 
         <div class="container">
-            <p class="description w-15 mb-5 px-3 mx-auto">
+            <p class="description w-15 mb-2 px-3 mx-auto">
                 На нашем сайте вы сможете найти книги на любой вкус.
             </p>
-
-            <div class="d-flex flex-wrap justify-content-center">
-                {% for book in books %}
-                <div class="card m-3 w-15">
-                    <div class="card-title">{{book.book.name}}</div>
-                    <ul>
-                        {% for genre in book.genres %}
-                        <li>{{genre.name}}</li>
-                        {% endfor %}
-                    </ul>
-                    <div>{{book.book.year}}</div>
-                    <div>{{book.book.rating}}</div>
-                    <div>{{book.book.rating_num}}</div>
-                    <a href="{{ url_for('show', book_id = book.book.id) }}" class="btn btn-success">Просмотр</a>
-                    {% if current_user.is_authenticated %}
-                    {% if current_user.is_admin() or current_user.is_moder() %}
-                    <a class="btn btn-warning"
-                        href="{{ url_for('edit_book', book_id = book.book.id) }}">Редактировать</a>
-                    {% endif %}
-                    {% if current_user.is_admin() %}
-                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal"
-                        data-url="{{ url_for('delete_post', book_id = book.book.id) }}"
-                        data-title="{{ book.book.name }}">Удалить</button>
-                    {% endif %}
-                    {% endif %}
+            <div class="mb-5 mt-3 border border-2 border-dark">
+                <h3 class="mt-2">Популярные книги</h3>
+                <div class="d-flex flex-wrap justify-content-center">
+                    {% for book in popular_books %}
+                    <div class="d-flex p-2 justify-content-between book_card m-3">
+                        <div>Обложка</div>
+                        <div>
+                            <h3 class="mt-1">{{book.name}}</h3>
+                            <div class="mt-1">Жанр(ы): <br>
+                                <ul>
+                                    {% for genre in book.genres %}
+                                    <li>{{genre.name}}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <div class="mt-1">{{book.year}}</div>
+                            <div class="mt-1">Средняя оценка пользователей: {{book.rating}}</div>
+                            <div class="mt-1">Количество рецензий: {{book.rating_num}}</div>
+                        </div>
+                        <div class="d-flex justify-content-center align-items-center">
+                            <div class="btn-group-vertical action-btns" role="group" aria-label="Vertical button group">
+                                <a href="{{ url_for('show', book_id = book.id) }}" class="btn btn-success">Просмотр</a>
+                                {% if current_user.is_authenticated %}
+                                {% if current_user.is_admin() or current_user.is_moder() %}
+                                <a class="btn btn-warning"
+                                    href="{{ url_for('edit_book', book_id = book.id) }}">Редактировать</a>
+                                {% endif %}
+                                {% if current_user.is_admin() %}
+                                <button type="button" class="btn btn-danger" data-bs-toggle="modal"
+                                    data-bs-target="#deleteModal"
+                                    data-url="{{ url_for('delete_post', book_id = book.id) }}"
+                                    data-title="{{ book.name }}">Удалить</button>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
+            </div>
+
+            <div class="mb-5 mt-3 border border-2 border-dark">
+                <h3 class="mt-2">Все книги</h3>
+                <div class="d-flex flex-wrap justify-content-center">
+                    {% for book in books %}
+                    <div class="d-flex p-2 justify-content-between book_card m-3">
+                        <div>Обложка</div>
+                        <div>
+                            <h3 class="mt-1">{{book.book.name}}</h3>
+                            <div class="mt-1">Жанр(ы): <br>
+                                <ul>
+                                    {% for genre in book.genres %}
+                                    <li>{{genre.name}}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            <div class="mt-1">{{book.book.year}}</div>
+                            <div class="mt-1">Средняя оценка пользователей: {{book.book.rating}}</div>
+                            <div class="mt-1">Количество рецензий: {{book.book.rating_num}}</div>
+                        </div>
+                        <div class="d-flex justify-content-center align-items-center">
+                            <div class="btn-group-vertical action-btns" role="group" aria-label="Vertical button group">
+                                <a href="{{ url_for('show', book_id = book.book.id) }}"
+                                    class="btn btn-success">Просмотр</a>
+                                {% if current_user.is_authenticated %}
+                                {% if current_user.is_admin() or current_user.is_moder() %}
+                                <a class="btn btn-warning"
+                                    href="{{ url_for('edit_book', book_id = book.book.id) }}">Редактировать</a>
+                                {% endif %}
+                                {% if current_user.is_admin() %}
+                                <button type="button" class="btn btn-danger" data-bs-toggle="modal"
+                                    data-bs-target="#deleteModal"
+                                    data-url="{{ url_for('delete_post', book_id = book.book.id) }}"
+                                    data-title="{{ book.book.name }}">Удалить</button>
+                                {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {{pagination(page, page_count, request.endpoint)}}
             </div>
             {% if current_user.is_authenticated %}
             {% if current_user.is_admin() %}
@@ -66,7 +121,6 @@
                 </form>
             </div> -->
         </div>
-        {{pagination(page, page_count, request.endpoint)}}
     </div>
     {% if current_user.is_authenticated %}
     <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">

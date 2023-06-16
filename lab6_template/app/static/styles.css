@@ -38,3 +38,20 @@
 .cursor-pointer {
     cursor: pointer;
 }
+
+.book_card {
+    width: 40vw;
+    min-width: 300px;
+    height: 20vw;
+    min-height: 300px;
+    border: 2px solid gray;
+}
+
+.comment__avatar-img {
+    width: 50px;
+    height: 50px;
+}
+
+.action-btns {
+    height: 50px;
+}

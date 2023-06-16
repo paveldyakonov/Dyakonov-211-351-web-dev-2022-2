@@ -1,6 +1,6 @@
 import math
 from flask import Flask, flash, redirect, render_template, abort, request, send_from_directory, url_for
-from sqlalchemy import MetaData, desc
+from sqlalchemy import MetaData, desc, func, select
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import login_required, current_user
@@ -35,19 +35,46 @@ app.register_blueprint(comment_bp)
 
 init_login_manager(app)
 
-from models import Image, Book, Genre, Comment
+from models import Image, Book, Genre, Comment, Visit
 from auth import check_rights
+
+def get_popular_books():
+    visits = db.session.execute(db.select(Visit.book_id).order_by(desc(func.count(Visit.book_id))).group_by(Visit.book_id).limit(5)).scalars()
+    popular_books = []
+    for visit in visits:
+        book = db.session.query(Book).filter(Book.id == int(visit)).scalar()
+        popular_books.append(book)
+        
+    return popular_books
+
+@app.before_request
+def log_visits():
+    if request.endpoint == "show":
+        book_id = request.path.split("/")[-1]
+        try:
+            user_id = ""
+            if current_user.is_authenticated:
+                user_id = current_user.id
+            params = {
+                "book_id": book_id,
+                "user_id": user_id,
+            }
+            visit = Visit(**params)
+            db.session.add(visit)
+            db.session.commit()
+        except:
+            db.session.rollback()
 
 @app.route('/')
 def index():
     page = request.args.get('page', 1, type=int)
     per_page = app.config['PER_PAGE']
+    popular_books = get_popular_books()
     info_about_books = []
     books_counter = Book.query.count()
     books = db.session.execute(db.select(Book).order_by(desc(Book.year)).limit(per_page).offset(per_page * (page - 1))).scalars()
     #books_counter = db.session.execute(db.select(Book)).count()
     for book in books:
-        books_counter += 1
         info = {
             'book': book,
             'genres': book.genres,
@@ -62,7 +89,8 @@ def index():
         categories=categories,
         books=info_about_books,
         page=page,
-        page_count=page_count
+        page_count=page_count,
+        popular_books=popular_books
     )
 
 @app.route('/images/<image_id>')
@@ -176,11 +204,25 @@ def show(book_id):
     try:
         book = db.session.query(Book).filter(Book.id == book_id).scalar()
         book.short_desc = markdown.markdown(book.short_desc)
-        comment = None
+        user_comment = None
+        all_comments = None
         if current_user.is_authenticated:
-            comment = db.session.query(Comment).filter(Comment.book_id == book_id, Comment.user_id == current_user.id).scalar()
+            user_comment = db.session.query(Comment).filter(Comment.book_id == book_id).filter(Comment.user_id == current_user.id).scalar()
+            if user_comment:
+                user_comment.text = markdown.markdown(user_comment.text)
+            all_comments = db.session.execute(db.select(Comment).filter(Comment.book_id == book_id, Comment.user_id != current_user.id)).scalars()
+        else:
+            all_comments = db.session.execute(db.select(Comment).filter(Comment.book_id == book_id)).scalars()
+        
+        markdown_all_comments = []
+        for comment in all_comments:
+            markdown_all_comments.append({
+                'get_user': comment.get_user,
+                'mark': comment.mark,
+                'text': markdown.markdown(comment.text)
+            })
         genres = book.genres
-        return render_template('books/show.html', book=book, genres=genres, comment=comment)
+        return render_template('books/show.html', book=book, genres=genres, comment=user_comment, all_comments=markdown_all_comments)
     except:
         flash('Ошибка при загрузке данных', 'danger')
         return redirect(url_for('index'))

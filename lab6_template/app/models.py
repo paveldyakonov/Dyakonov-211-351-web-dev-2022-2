@@ -72,6 +72,9 @@ class Comment(db.Model):
     user = db.relationship('User', cascade="all,delete")
     book = db.relationship('Book', cascade="all,delete")
 
+    def get_user(self):
+        return db.session.execute(db.select(User).filter_by(id=self.user_id)).scalar().login
+
     def __repr__(self):
         return '<Comment %r>' % self.text
 
@@ -138,6 +141,16 @@ class Role(db.Model):
     def __repr__(self):
         return '<Role %r>' % self.name
 
+
+class Visit(db.Model):
+    __tablename__ = 'visits'
+    id = db.Column(db.Integer, primary_key=True)
+    book_id = db.Column(db.Integer, db.ForeignKey('books.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    created_at = db.Column(db.DateTime, nullable=False, server_default=sa.sql.func.now())
+    
+    def __repr__(self):
+        return '<Visit %r>' % self.book_id
 
 # class Course(db.Model):
 #     __tablename__ = 'courses'
