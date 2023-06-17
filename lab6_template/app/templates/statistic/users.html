@@ -1,0 +1,31 @@
+{% extends 'statistic/base.html' %}
+{% from "pagination.html" import pagination %}
+
+{% block tab_content %}
+
+<h1>Журнал действий пользователей</h1>
+<table class="table">
+    <thead>
+        <tr>
+            <th>№</th>
+            <th>Пользователь</th>
+            <th>Название книги</th>
+            <th>Дата и время просмотра</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for stat in stats %}
+        <tr>
+            <td>{{loop.index}}</td>
+            <td>{{stat.get_user_name().login or "Неаутентифицированный пользователь"}}</td>
+            <td>{{stat.get_book_name()}}</td>
+            <td>{{stat.created_at}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{{pagination(page, page_count, request.endpoint)}}
+<a class="btn btn-primary mb-3" href="{{ url_for('statistic.users', download_csv=True) }}">Экспорт в CSV</a>
+
+
+{% endblock %}

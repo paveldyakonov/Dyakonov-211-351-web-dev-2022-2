@@ -36,6 +36,9 @@
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                         <span class="dropdown-item">{{current_user.login}}</span>
                         <a class="dropdown-item" href="{{url_for('index')}}">Все книги</a>
+                        {% if current_user.is_admin() %}
+                        <a class="dropdown-item" href="{{url_for('statistic.index')}}">Статистика</a>
+                        {% endif %}
                         <div class="dropdown-divider"></div>
                         <a class="dropdown-item" href="{{ url_for('auth.logout') }}">Выйти</a>
                     </div>

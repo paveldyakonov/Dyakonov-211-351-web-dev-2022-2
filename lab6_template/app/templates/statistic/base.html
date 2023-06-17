@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1>Статистика</h1>
+
+<ul class="nav nav-tabs">
+    {% if current_user.is_admin() %}
+    <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'statistic.books' %}active{% endif %}"
+            href="{{url_for('statistic.books')}}">Статистика
+            просмотра
+            книг</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.endpoint == 'statistic.users' %}active{% endif %}"
+            href="{{url_for('statistic.users')}}">Журнал действий
+            пользователей</a>
+    </li>
+    {% endif %}
+</ul>
+
+{% block tab_content %}
+{% endblock %}
+{% endblock %}

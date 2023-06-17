@@ -27,10 +27,12 @@ migrate = Migrate(app, db)
 PERMITTED_PARAMS = ["name", "short_desc", "year", "pub_house", "author", "volume"]
 from auth import bp as auth_bp, init_login_manager
 from comments import bp as comment_bp
+from statistic import bp as statistic_bp
 # from courses import bp as courses_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(comment_bp)
+app.register_blueprint(statistic_bp)
 # app.register_blueprint(courses_bp)
 
 init_login_manager(app)
@@ -47,12 +49,30 @@ def get_popular_books():
         
     return popular_books
 
+def get_viewed_books():
+    user_id = None
+    if current_user.is_authenticated:
+        user_id = current_user.id
+    visits = db.session.execute(db.select(Visit.book_id).filter_by(user_id=user_id).order_by(desc(Visit.created_at))).scalars()
+    group_visits = []
+    #visits = db.session.execute(db.select(Visit.book_id, Visit.created_at).filter_by(user_id=user_id).group_by(Visit.book_id).order_by(desc(Visit.created_at)).limit(5)).scalars()
+    viewed_books = []
+    for visit in visits:
+        if visit not in group_visits:
+            book = db.session.query(Book).filter(Book.id == int(visit)).scalar()
+            viewed_books.append(book)
+            group_visits.append(visit)
+        if len(group_visits) == 5:
+            break
+    return viewed_books
+
+
 @app.before_request
 def log_visits():
     if request.endpoint == "show":
         book_id = request.path.split("/")[-1]
         try:
-            user_id = ""
+            user_id = None
             if current_user.is_authenticated:
                 user_id = current_user.id
             params = {
@@ -70,6 +90,7 @@ def index():
     page = request.args.get('page', 1, type=int)
     per_page = app.config['PER_PAGE']
     popular_books = get_popular_books()
+    viewed_books = get_viewed_books()
     info_about_books = []
     books_counter = Book.query.count()
     books = db.session.execute(db.select(Book).order_by(desc(Book.year)).limit(per_page).offset(per_page * (page - 1))).scalars()
@@ -90,7 +111,8 @@ def index():
         books=info_about_books,
         page=page,
         page_count=page_count,
-        popular_books=popular_books
+        popular_books=popular_books,
+        viewed_books=viewed_books
     )
 
 @app.route('/images/<image_id>')
@@ -146,6 +168,7 @@ def delete_post(book_id):
         book = db.session.query(Book).filter(Book.id == book_id).scalar()
         book.genres = []
         db.session.query(Comment).filter(Comment.book_id == book_id).delete()
+        db.session.query(Visit).filter(Visit.book_id == book_id).delete()
         db.session.query(Book).filter(Book.id == book_id).delete()
         db.session.commit()
         flash('Запись успешно удалена', 'success')

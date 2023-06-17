@@ -6,6 +6,9 @@ class UsersPolicy:
     
     def assign_role(self):
         return current_user.is_admin()
+    
+    def statistic(self):
+        return current_user.is_admin()
 
     def delete(self):
         return current_user.is_admin()

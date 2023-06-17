@@ -23,6 +23,9 @@ class Book(db.Model):
     rating_num = db.Column(db.Integer, nullable=False, default=0)
     genres = db.relationship('Genre', secondary=book_genre, backref=db.backref('books'), cascade="all,delete")
 
+    def get_visits_count(self):
+        return db.session.query(Visit).filter(Visit.book_id == self.id, Visit.user_id != None).count()
+
     def __repr__(self):
         return '<Book %r>' % self.name
     
@@ -148,6 +151,12 @@ class Visit(db.Model):
     book_id = db.Column(db.Integer, db.ForeignKey('books.id'))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, nullable=False, server_default=sa.sql.func.now())
+
+    def get_book_name(self):
+        return db.session.execute(db.select(Book).filter_by(id=self.book_id)).scalar().name
+    
+    def get_user_name(self):
+        return db.session.execute(db.select(User).filter_by(id=self.user_id)).scalar()
     
     def __repr__(self):
         return '<Visit %r>' % self.book_id

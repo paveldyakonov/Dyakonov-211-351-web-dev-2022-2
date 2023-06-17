@@ -1,0 +1,29 @@
+{% extends 'statistic/base.html' %}
+{% from "pagination.html" import pagination %}
+
+{% block tab_content %}
+
+<h1>Статистика просмотра книг</h1>
+<table class="table">
+    <thead>
+        <tr>
+            <th>№</th>
+            <th>Название книги</th>
+            <th>Количество просмотров</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for stat in stats %}
+        <tr>
+            <td>{{loop.index}}</td>
+            <td>{{stat.name}}</td>
+            <td>{{stat.get_visits_count()}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{{pagination(page, page_count, request.endpoint)}}
+<a class="btn btn-primary mb-3" href="{{ url_for('statistic.books', download_csv=True) }}">Экспорт в CSV</a>
+
+
+{% endblock %}
