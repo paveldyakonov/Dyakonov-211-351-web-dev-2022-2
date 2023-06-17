@@ -1,8 +1,9 @@
+from datetime import datetime, timedelta
 import os
 import sqlalchemy as sa
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_login import UserMixin
-from flask import current_app, url_for
+from flask import current_app, request, url_for
 from app import db
 from users_policy import UsersPolicy
 
@@ -24,6 +25,13 @@ class Book(db.Model):
     genres = db.relationship('Genre', secondary=book_genre, backref=db.backref('books'), cascade="all,delete")
 
     def get_visits_count(self):
+        if request.method == "POST":
+            date_from = request.form.get('date_from')
+            date_before = request.form.get('date_before')
+            if date_from:
+                return db.session.query(Visit).filter(Visit.book_id == self.id, Visit.user_id != None, Visit.created_at >= datetime.strptime(date_from, '%Y-%m-%d')).count()
+            elif date_before:
+                return db.session.query(Visit).filter(Visit.book_id == self.id, Visit.user_id != None, Visit.created_at <= datetime.strptime(date_before, '%Y-%m-%d') + timedelta(days=1)).count()                
         return db.session.query(Visit).filter(Visit.book_id == self.id, Visit.user_id != None).count()
 
     def __repr__(self):

@@ -1,7 +1,7 @@
 import math
 import io
 import csv
-from datetime import date
+from datetime import date, datetime, timedelta
 from functools import wraps
 from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file
 from auth import check_rights
@@ -56,10 +56,20 @@ def users():
 def get_books(all = False, page = 1):
     visits = []
     per_page = PER_PAGE
-    if all:
+    if request.method == "POST":
+        date_from = request.form.get('date_from')
+        date_before = request.form.get('date_before')
+        if date_from:
+            visits = db.session.execute(db.select(Visit.book_id).filter(Visit.user_id != None, Visit.created_at >= datetime.strptime(date_from, '%Y-%m-%d')).order_by(desc(func.count(Visit.book_id))).group_by(Visit.book_id).limit(per_page).offset(per_page * (page - 1))).scalars()
+        elif date_before:
+            visits = db.session.execute(db.select(Visit.book_id).filter(Visit.user_id != None, Visit.created_at <= datetime.strptime(date_before, '%Y-%m-%d') + timedelta(days=1)).order_by(desc(func.count(Visit.book_id))).group_by(Visit.book_id).limit(per_page).offset(per_page * (page - 1))).scalars()
+        else:
+            visits = db.session.execute(db.select(Visit.book_id).filter(Visit.user_id != None).order_by(desc(func.count(Visit.book_id))).group_by(Visit.book_id).limit(per_page).offset(per_page * (page - 1))).scalars()
+    elif all:
         visits = db.session.execute(db.select(Visit.book_id).filter(Visit.user_id != None).order_by(desc(func.count(Visit.book_id))).group_by(Visit.book_id)).scalars()
     else:
         visits = db.session.execute(db.select(Visit.book_id).filter(Visit.user_id != None).order_by(desc(func.count(Visit.book_id))).group_by(Visit.book_id).limit(per_page).offset(per_page * (page - 1))).scalars()
+
     books = []
     for visit in visits:
         book = db.session.query(Book).filter(Book.id == int(visit)).scalar()
@@ -67,13 +77,22 @@ def get_books(all = False, page = 1):
         
     return books
 
-@bp.route('/books')
+@bp.route('/books', methods=['GET', 'POST'])
 @login_required
 @check_rights("statistic")
 def books():
+    date_from = ""
+    date_before = ""
+    visits_counter = db.session.query(Visit.book_id).filter(Visit.user_id != None).group_by(Visit.book_id).count()
+    if request.method == "POST":
+        date_from = request.form.get('date_from')
+        date_before = request.form.get('date_before')
+        if date_from:
+            visits_counter = db.session.query(Visit.book_id).filter(Visit.user_id != None, Visit.created_at >= datetime.strptime(date_from, '%Y-%m-%d')).group_by(Visit.book_id).count()
+        elif date_before:
+            visits_counter = db.session.query(Visit.book_id).filter(Visit.user_id != None, Visit.created_at <= datetime.strptime(date_before, '%Y-%m-%d') + timedelta(days=1)).group_by(Visit.book_id).count()
     page = request.args.get('page', 1, type=int)
     per_page = PER_PAGE
-    visits_counter = db.session.query(Visit.book_id).filter(Visit.user_id != None).group_by(Visit.book_id).count()
     page_count = math.ceil(visits_counter / per_page)
     download_status = False
     if request.args.get('download_csv'):
@@ -92,4 +111,4 @@ def books():
     books = get_books(False, page)
     #visits = db.session.execute(db.select(Visit).order_by(desc(Visit.created_at)).limit(per_page).offset(per_page * (page - 1))).scalars()
         
-    return render_template('statistic/books.html', stats=books, page=page, page_count=page_count)
+    return render_template('statistic/books.html', stats=books, page=page, page_count=page_count, date_from=date_from, date_before=date_before)

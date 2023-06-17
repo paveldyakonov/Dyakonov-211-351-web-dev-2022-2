@@ -2,28 +2,45 @@
 {% from "pagination.html" import pagination %}
 
 {% block tab_content %}
-
-<h1>Статистика просмотра книг</h1>
-<table class="table">
-    <thead>
-        <tr>
-            <th>№</th>
-            <th>Название книги</th>
-            <th>Количество просмотров</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for stat in stats %}
-        <tr>
-            <td>{{loop.index}}</td>
-            <td>{{stat.name}}</td>
-            <td>{{stat.get_visits_count()}}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-{{pagination(page, page_count, request.endpoint)}}
-<a class="btn btn-primary mb-3" href="{{ url_for('statistic.books', download_csv=True) }}">Экспорт в CSV</a>
-
+<div class="container">
+    <h1>Статистика просмотра книг</h1>
+    <form class="my-3 p-2 border border-2 border-dark" enctype="multipart/form-data"
+        action="{{url_for('statistic.books')}}" method="post">
+        <div class="container">
+            <div class="mb-3">
+                <label for="exampleInputEmail1" class="form-label">Дата от:</label>
+                <input type="date" name="date_from" class="form-control" id="exampleInputEmail1"
+                    aria-describedby="emailHelp" value="{{date_from}}">
+            </div>
+            <div class="mb-3">
+                <label for="exampleInputPassword1" class="form-label">Дата до (включительно):</label>
+                <input type="date" name="date_before" class="form-control" id="exampleInputPassword1"
+                    value="{{date_before}}">
+            </div>
+            <button type="submit" class="btn btn-primary">Применить
+            </button>
+        </div>
+    </form>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>№</th>
+                <th>Название книги</th>
+                <th>Количество просмотров</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stat in stats %}
+            <tr>
+                <td>{{loop.index}}</td>
+                <td>{{stat.name}}</td>
+                <td>{{stat.get_visits_count()}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {{pagination(page, page_count, request.endpoint)}}
+    <a class="btn btn-primary mb-3" href="{{ url_for('statistic.books', download_csv=True) }}">Экспорт в CSV</a>
+</div>
 
 {% endblock %}
