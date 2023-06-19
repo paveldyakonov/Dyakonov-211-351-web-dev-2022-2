@@ -42,7 +42,7 @@
 .book_card {
     width: 40vw;
     min-width: 300px;
-    height: 20vw;
+    height: 25vw;
     min-height: 300px;
     border: 2px solid gray;
 }
@@ -54,4 +54,8 @@
 
 .action-btns {
     height: 50px;
+}
+
+.book-logo {
+    width: 15vw;
 }

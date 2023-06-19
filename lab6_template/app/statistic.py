@@ -1,15 +1,12 @@
 import math
 import io
-import csv
 from datetime import date, datetime, timedelta
-from functools import wraps
-from flask import Blueprint, render_template, redirect, url_for, flash, request, send_file
+from flask import Blueprint, render_template, request, send_file
 from auth import check_rights
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models import User, Comment, Book, Visit
+from flask_login import login_required
+from models import Book, Visit
 from app import db
 from flask import Blueprint
-import bleach
 from sqlalchemy import desc, func
 
 PER_PAGE = 10
@@ -100,7 +97,6 @@ def books():
 
     if download_status:
         books = get_books(True)
-        #visits = db.session.execute(db.select(Visit).order_by(desc(Visit.created_at))).scalars()
         f = io.BytesIO()
         f.write("N,Book,Count\n".encode("utf-8"))
         for i, row in enumerate(books):
@@ -109,6 +105,5 @@ def books():
         today = date.today()
         return send_file(f, as_attachment=True, download_name=f"stat_books{today}.csv", mimetype="text/csv")
     books = get_books(False, page)
-    #visits = db.session.execute(db.select(Visit).order_by(desc(Visit.created_at)).limit(per_page).offset(per_page * (page - 1))).scalars()
         
     return render_template('statistic/books.html', stats=books, page=page, page_count=page_count, date_from=date_from, date_before=date_before)

@@ -2,7 +2,7 @@
 {% from "books/form.html" import book_form %}
 
 {% block content %}
-<h1 class="py-3">Редактирование книги</h1>
+<h1 class="py-3 container">Редактирование книги</h1>
 {{book_form(genres, url_for('update_book', book_id=book.id), current_user, new_genres, book)}}
 
 {% endblock %}

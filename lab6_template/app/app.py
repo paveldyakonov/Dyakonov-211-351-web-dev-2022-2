@@ -1,11 +1,12 @@
 import math
-from flask import Flask, flash, redirect, render_template, abort, request, send_from_directory, url_for
-from sqlalchemy import MetaData, desc, func, select
+from flask import Flask, flash, make_response, redirect, render_template, request, send_from_directory, url_for
+from sqlalchemy import MetaData, desc, func
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import login_required, current_user
 import bleach
 import markdown
+from datetime import date, datetime, timedelta
 
 app = Flask(__name__)
 application = app
@@ -28,20 +29,20 @@ PERMITTED_PARAMS = ["name", "short_desc", "year", "pub_house", "author", "volume
 from auth import bp as auth_bp, init_login_manager
 from comments import bp as comment_bp
 from statistic import bp as statistic_bp
-# from courses import bp as courses_bp
 
 app.register_blueprint(auth_bp)
 app.register_blueprint(comment_bp)
 app.register_blueprint(statistic_bp)
-# app.register_blueprint(courses_bp)
 
 init_login_manager(app)
 
 from models import Image, Book, Genre, Comment, Visit
 from auth import check_rights
+from tools import ImageSaver
 
 def get_popular_books():
-    visits = db.session.execute(db.select(Visit.book_id).order_by(desc(func.count(Visit.book_id))).group_by(Visit.book_id).limit(5)).scalars()
+    date_3_months_ago = datetime.now() - timedelta(days=90)
+    visits = db.session.execute(db.select(Visit.book_id).filter(Visit.created_at >= date_3_months_ago).order_by(desc(func.count(Visit.book_id))).group_by(Visit.book_id).limit(5)).scalars()
     popular_books = []
     for visit in visits:
         book = db.session.query(Book).filter(Book.id == int(visit)).scalar()
@@ -50,20 +51,28 @@ def get_popular_books():
     return popular_books
 
 def get_viewed_books():
-    user_id = None
-    if current_user.is_authenticated:
-        user_id = current_user.id
-    visits = db.session.execute(db.select(Visit.book_id).filter_by(user_id=user_id).order_by(desc(Visit.created_at))).scalars()
-    group_visits = []
-    #visits = db.session.execute(db.select(Visit.book_id, Visit.created_at).filter_by(user_id=user_id).group_by(Visit.book_id).order_by(desc(Visit.created_at)).limit(5)).scalars()
     viewed_books = []
-    for visit in visits:
-        if visit not in group_visits:
-            book = db.session.query(Book).filter(Book.id == int(visit)).scalar()
-            viewed_books.append(book)
-            group_visits.append(visit)
-        if len(group_visits) == 5:
-            break
+    if request.cookies.get('viewed_books'):
+        books = request.cookies.get('viewed_books').split(',')
+        print('EEEEEEE', books)
+        for book in books:
+            viewed_book = db.session.query(Book).filter(Book.id == int(book)).scalar()
+            if viewed_book:
+                viewed_books.append(viewed_book)
+    # user_id = None
+    # if current_user.is_authenticated:
+    #     user_id = current_user.id
+    # visits = db.session.execute(db.select(Visit.book_id).filter_by(user_id=user_id).order_by(desc(Visit.created_at))).scalars()
+    # group_visits = []
+    # #visits = db.session.execute(db.select(Visit.book_id, Visit.created_at).filter_by(user_id=user_id).group_by(Visit.book_id).order_by(desc(Visit.created_at)).limit(5)).scalars()
+    # viewed_books = []
+    # for visit in visits:
+    #     if visit not in group_visits:
+    #         book = db.session.query(Book).filter(Book.id == int(visit)).scalar()
+    #         viewed_books.append(book)
+    #         group_visits.append(visit)
+    #     if len(group_visits) == 5:
+    #         break
     return viewed_books
 
 
@@ -73,15 +82,19 @@ def log_visits():
         book_id = request.path.split("/")[-1]
         try:
             user_id = None
+            count_of_visits = 0
             if current_user.is_authenticated:
                 user_id = current_user.id
+            today = date.today()
+            count_of_visits = db.session.query(Visit.book_id).filter(Visit.user_id == user_id, Visit.book_id == int(book_id), Visit.created_at >= today).count()
             params = {
                 "book_id": book_id,
                 "user_id": user_id,
             }
-            visit = Visit(**params)
-            db.session.add(visit)
-            db.session.commit()
+            if count_of_visits < 10:
+                visit = Visit(**params)
+                db.session.add(visit)
+                db.session.commit()
         except:
             db.session.rollback()
 
@@ -94,7 +107,6 @@ def index():
     info_about_books = []
     books_counter = Book.query.count()
     books = db.session.execute(db.select(Book).order_by(desc(Book.year)).limit(per_page).offset(per_page * (page - 1))).scalars()
-    #books_counter = db.session.execute(db.select(Book)).count()
     for book in books:
         info = {
             'book': book,
@@ -104,7 +116,6 @@ def index():
     page_count = math.ceil(books_counter / per_page)
     print("rrrrr", books_counter)
     categories = []
-    # categories = db.session.execute(db.select(Category)).scalars()
     return render_template(
         'index.html',
         categories=categories,
@@ -147,12 +158,17 @@ def create_book():
     new_genres = request.form.getlist('genre_id')
     genres = db.session.execute(db.select(Genre)).scalars()
     try:
-        book = Book(**cur_params)
+        f = request.files.get('cover_img')
+        if f and f.filename:
+            img = ImageSaver(f)
+            db_img = img.save_to_db()
+        book = Book(**cur_params, image_id=db_img.id)
         for genre in new_genres:
             new_genre = db.session.execute(db.select(Genre).filter_by(id=genre)).scalar()
             book.genres.append(new_genre)
         db.session.add(book)
         db.session.commit()
+        img.save_to_system()
         flash(f"Книга '{book.name}' успешно добавлена", "success")
     except:
         db.session.rollback()
@@ -171,7 +187,16 @@ def delete_post(book_id):
         db.session.query(Visit).filter(Visit.book_id == book_id).delete()
         db.session.query(Book).filter(Book.id == book_id).delete()
         db.session.commit()
+        res = make_response(redirect(url_for('index')))
+        if request.cookies.get('viewed_books'):
+            viewed_books = []
+            book_ids = request.cookies.get('viewed_books').split(',')
+            for id in book_ids:
+                if id != str(book_id):
+                    viewed_books.append(id)
+            res.set_cookie('viewed_books', ','.join(viewed_books), max_age=60*60*24*365*2)
         flash('Запись успешно удалена', 'success')
+        return res
     except:
         db.session.rollback()
         flash('Ошибка при удалении', 'danger')
@@ -224,28 +249,46 @@ def update_book(book_id):
 
 @app.route('/books/<int:book_id>')
 def show(book_id):
-    try:
-        book = db.session.query(Book).filter(Book.id == book_id).scalar()
-        book.short_desc = markdown.markdown(book.short_desc)
-        user_comment = None
-        all_comments = None
-        if current_user.is_authenticated:
-            user_comment = db.session.query(Comment).filter(Comment.book_id == book_id).filter(Comment.user_id == current_user.id).scalar()
-            if user_comment:
-                user_comment.text = markdown.markdown(user_comment.text)
-            all_comments = db.session.execute(db.select(Comment).filter(Comment.book_id == book_id, Comment.user_id != current_user.id)).scalars()
-        else:
-            all_comments = db.session.execute(db.select(Comment).filter(Comment.book_id == book_id)).scalars()
-        
-        markdown_all_comments = []
-        for comment in all_comments:
-            markdown_all_comments.append({
-                'get_user': comment.get_user,
-                'mark': comment.mark,
-                'text': markdown.markdown(comment.text)
-            })
-        genres = book.genres
-        return render_template('books/show.html', book=book, genres=genres, comment=user_comment, all_comments=markdown_all_comments)
-    except:
-        flash('Ошибка при загрузке данных', 'danger')
-        return redirect(url_for('index'))
+        try:
+            book = db.session.query(Book).filter(Book.id == book_id).scalar()
+            book.short_desc = markdown.markdown(book.short_desc)
+            user_comment = None
+            all_comments = None
+            if current_user.is_authenticated:
+                user_comment = db.session.query(Comment).filter(Comment.book_id == book_id).filter(Comment.user_id == current_user.id).scalar()
+                if user_comment:
+                    user_comment.text = markdown.markdown(user_comment.text)
+                all_comments = db.session.execute(db.select(Comment).filter(Comment.book_id == book_id, Comment.user_id != current_user.id)).scalars()
+            else:
+                all_comments = db.session.execute(db.select(Comment).filter(Comment.book_id == book_id)).scalars()
+            
+            markdown_all_comments = []
+            for comment in all_comments:
+                markdown_all_comments.append({
+                    'get_user': comment.get_user,
+                    'mark': comment.mark,
+                    'text': markdown.markdown(comment.text)
+                })
+            genres = book.genres
+            if not request.cookies.get('viewed_books'):
+                res = make_response(render_template('books/show.html', book=book, genres=genres, comment=user_comment, all_comments=markdown_all_comments))
+                res.set_cookie('viewed_books', str(book_id), max_age=60*60*24*365*2)
+            else:
+                res = make_response(render_template('books/show.html', book=book, genres=genres, comment=user_comment, all_comments=markdown_all_comments))
+                book_ids = request.cookies.get('viewed_books').split(',')
+                if len(book_ids) == 5 and str(book_id) not in book_ids:
+                    book_ids.pop()
+                new_book_ids = str(book_id)
+                if str(book_id) not in book_ids:
+                    new_book_ids = new_book_ids + ',' + ','.join(book_ids)
+                else:
+                    viewed_book_ids = [new_book_ids]
+                    for id in book_ids:
+                        if id not in viewed_book_ids:
+                            viewed_book_ids.append(id)
+                    new_book_ids = ','.join(viewed_book_ids)
+                res.set_cookie('viewed_books', new_book_ids, max_age=60*60*24*365*2)
+            return res
+        except:
+            flash('Ошибка при загрузке данных', 'danger')
+            return redirect(url_for('index'))

@@ -1,5 +1,5 @@
 {% macro book_form(genres, url, current_user, new_genres, book = {}) %}
-<form enctype="multipart/form-data" action="{{url}}" method="post">
+<form class="container" enctype="multipart/form-data" action="{{url}}" method="post">
   <div class="row mb-3">
     <label for="inputName" class="col-sm-2 col-form-label">Название</label>
     <div class="col-sm-10">

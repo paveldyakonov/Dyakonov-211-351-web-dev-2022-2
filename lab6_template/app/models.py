@@ -22,7 +22,9 @@ class Book(db.Model):
     volume = db.Column(db.Integer, nullable=False)
     rating_sum = db.Column(db.Integer, nullable=False, default=0)
     rating_num = db.Column(db.Integer, nullable=False, default=0)
+    image_id = db.Column(db.String(100), db.ForeignKey('images.id'))
     genres = db.relationship('Genre', secondary=book_genre, backref=db.backref('books'), cascade="all,delete")
+    image = db.relationship('Image', cascade="all,delete")
 
     def get_visits_count(self):
         if request.method == "POST":
@@ -57,7 +59,6 @@ class Image(db.Model):
     file_name = db.Column(db.String(100), nullable=False)
     mime_type = db.Column(db.String(100), nullable=False)
     md5_hash = db.Column(db.String(100), nullable=False, unique=True)
-    book_id = db.Column(db.Integer, db.ForeignKey('books.id'))
 
     def __repr__(self):
         return '<Image %r>' % self.file_name

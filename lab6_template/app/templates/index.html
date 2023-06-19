@@ -15,7 +15,8 @@
                 <div class="d-flex flex-wrap justify-content-center">
                     {% for book in popular_books %}
                     <div class="d-flex p-2 justify-content-between book_card m-3">
-                        <div>Обложка</div>
+                        <img class="book-logo w-15"
+                            src="{% if book.image_id %}{{ url_for('image', image_id=book.image_id) }}{%endif%}" />
                         <div>
                             <h3 class="mt-1">{{book.name}}</h3>
                             <div class="mt-1">Жанр(ы): <br>
@@ -57,7 +58,8 @@
                 <div class="d-flex flex-wrap justify-content-center">
                     {% for book in viewed_books %}
                     <div class="d-flex p-2 justify-content-between book_card m-3">
-                        <div>Обложка</div>
+                        <img class="book-logo w-15"
+                            src="{% if book.image_id %}{{ url_for('image', image_id=book.image_id) }}{%endif%}" />
                         <div>
                             <h3 class="mt-1">{{book.name}}</h3>
                             <div class="mt-1">Жанр(ы): <br>
@@ -99,7 +101,8 @@
                 <div class="d-flex flex-wrap justify-content-center">
                     {% for book in books %}
                     <div class="d-flex p-2 justify-content-between book_card m-3">
-                        <div>Обложка</div>
+                        <img class="book-logo w-15"
+                            src="{% if book.book.image_id %}{{ url_for('image', image_id=book.book.image_id) }}{%endif%}" />
                         <div>
                             <h3 class="mt-1">{{book.book.name}}</h3>
                             <div class="mt-1">Жанр(ы): <br>

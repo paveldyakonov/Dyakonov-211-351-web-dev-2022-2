@@ -40,7 +40,8 @@
         </tbody>
     </table>
     {{pagination(page, page_count, request.endpoint)}}
-    <a class="btn btn-primary mb-3" href="{{ url_for('statistic.books', download_csv=True) }}">Экспорт в CSV</a>
+    <a class="btn btn-primary mb-3" href="{{url_for('statistic.books', download_csv=True)}}">Экспорт
+        в CSV</a>
 </div>
 
 {% endblock %}

@@ -2,7 +2,8 @@
 
 {% block content %}
 <div class="container border border-2 border-dark mt-5 w-50 d-flex justify-content-between flex-wrap">
-    <div class="w-15 me-2">Обложка</div>
+    <img class="book-logo w-100 mx-auto"
+        src="{% if book.image_id %}{{ url_for('image', image_id=book.image_id) }}{%endif%}" />
     <div class="d-flex flex-wrap flex-column">
         <h2 class="mt-3">{{book.name}}</h2>
         <h4 class="mt-1">Издательство: <span>{{book.pub_house}}</span></h4>
