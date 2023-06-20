@@ -5,27 +5,6 @@ from werkzeug.utils import secure_filename
 from models import Image
 from app import db, app
 
-# class CoursesFilter:
-#     def __init__(self, name, category_ids):
-#         self.name = name
-#         self.category_ids = category_ids
-#         self.query = db.select(Course)
-
-#     def perform(self):
-#         self.__filter_by_name()
-#         self.__filter_by_category_ids()
-#         return self.query.order_by(Course.created_at.desc())
-
-#     def __filter_by_name(self):
-#         if self.name:
-#             self.query = self.query.filter(
-#                 Course.name.ilike('%' + self.name + '%'))
-
-#     def __filter_by_category_ids(self):
-#         if self.category_ids:
-#             self.query = self.query.filter(
-#                 Course.category_id.in_(self.category_ids))
-
 class ImageSaver:
     def __init__(self, file):
         self.file = file
@@ -41,7 +20,7 @@ class ImageSaver:
             mime_type=self.file.mimetype,
             md5_hash=self.md5_hash)
         db.session.add(self.img)
-        db.session.commit()
+        #db.session.commit()
         return self.img
     
     def save_to_system(self):

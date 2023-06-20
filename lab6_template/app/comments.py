@@ -1,7 +1,6 @@
-from functools import wraps
 from flask import Blueprint, render_template, redirect, url_for, flash, request
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
-from models import User, Comment, Book
+from flask_login import login_required, current_user
+from models import Comment, Book
 from app import db
 from flask import Blueprint
 import bleach
@@ -16,7 +15,6 @@ def comment_post(book_id):
     if comment:
         flash("Можно добавить только одну рецензию", "warning")
         return redirect(url_for('show', book_id=book_id))
-        #return render_template('books/show.html', book=book, genres=book.genres, comment=comment)
     if request.method == 'POST':
         mark = request.form.get('mark')
         params = {
@@ -30,12 +28,10 @@ def comment_post(book_id):
         try:
             comment = Comment(**params)
             db.session.add(comment)
-            #book = db.session.query(Book).filter(Book.id == book_id).scalar()
             book.rating_sum = book.rating_sum + int(mark)
             book.rating_num = book.rating_num + 1
             db.session.commit()
             flash("Рецензия успешно добавлена", "success")
-            #return render_template('books/show.html', book=book, genres=book.genres, comment=comment)
             return redirect(url_for('show', book_id=book_id))
         except:
             db.session.rollback()

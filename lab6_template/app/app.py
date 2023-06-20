@@ -7,6 +7,7 @@ from flask_login import login_required, current_user
 import bleach
 import markdown
 from datetime import date, datetime, timedelta
+import os
 
 app = Flask(__name__)
 application = app
@@ -185,8 +186,17 @@ def delete_post(book_id):
         book.genres = []
         db.session.query(Comment).filter(Comment.book_id == book_id).delete()
         db.session.query(Visit).filter(Visit.book_id == book_id).delete()
+        count_of_images = db.session.query(Book).filter(Book.image_id == book.image_id).count()
         db.session.query(Book).filter(Book.id == book_id).delete()
+
+        if count_of_images == 1:
+            image = db.session.query(Image).filter(Image.id == book.image_id).scalar()
+            db.session.query(Image).filter(Image.id == book.image_id).delete()
         db.session.commit()
+
+        if count_of_images == 1:
+            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], image.storage_filename))
+
         res = make_response(redirect(url_for('index')))
         if request.cookies.get('viewed_books'):
             viewed_books = []
