@@ -109,11 +109,9 @@ class User(db.Model, UserMixin):
         return check_password_hash(self.password_hash, password)
     
     def is_admin(self):
-        #return True
         return self.role_id == current_app.config["ADMIN_ROLE_ID"]
     
     def is_moder(self):
-        #return True
         return self.role_id == current_app.config["MODER_ROLE_ID"]
     
     def can(self, action, record=None):
